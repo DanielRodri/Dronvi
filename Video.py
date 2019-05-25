@@ -45,12 +45,18 @@ class Example(wx.Frame):
         sizer.Add(line, pos=(1, 0), span=(1, 5),
             flag=wx.EXPAND|wx.BOTTOM, border=10)
 
-        text2 = wx.StaticText(panel, label="Numbers fps")
+        text2 = wx.StaticText(panel, label="Numbers frames")
         sizer.Add(text2, pos=(2, 0), flag=wx.LEFT, border=10)
 
         tc1 = wx.TextCtrl(panel)
         sizer.Add(tc1, pos=(2, 1), span=(1, 3), flag=wx.TOP|wx.EXPAND)
+        tc1.Bind(wx.EVT_CHAR, self.block_non_numbers)
+        text2 = wx.StaticText(panel, label="Numbers second")
+        sizer.Add(text2, pos=(3, 0), flag=wx.LEFT, border=10)
 
+        self.tc2 = wx.TextCtrl(panel)
+        sizer.Add(self.tc2, pos=(3, 1), span=(1, 3), flag=wx.TOP | wx.EXPAND)
+        self.tc2.Bind(wx.EVT_CHAR, self.block_non_numbers)
         button4 = wx.Button(panel, label="Ok")
         sizer.Add(button4, pos=(7, 3))
         button4.Bind(wx.EVT_BUTTON, self.onButton)
@@ -63,13 +69,33 @@ class Example(wx.Frame):
         panel.SetSizer(sizer)
         sizer.Fit(self)
 
+    def block_non_numbers(self,event):
+        key_code = event.GetKeyCode()
+        print(key_code)
+        # Allow ASCII numerics
+        if ord('0') <= key_code <= ord('9'):
+            event.Skip()
+            return
+
+        # Allow tabs, for tab navigation between TextCtrls
+        if key_code == ord('\t'):
+            event.Skip()
+            return
+
+        if key_code == 8:
+            event.Skip()
+            return
+
+        # Block everything else
+        return
+
     def getImages(self):
         global tc1
         f = open(self.__pathArchive, 'r')
         self.count = int(f.read())
         f.close()
 
-        count2 = 1;
+        count2 = 1
         frame_rate = int(tc1.GetValue())
         contador = 0
         try:
@@ -103,8 +129,12 @@ class Example(wx.Frame):
 
                     success, image = vidcap.read()
 
-                    if (contador == fps):
-                        contador = 0;
+
+                    if ((int(self.tc2.GetValue())*fps)==contador-frame_rate and int(self.tc2.GetValue()) !=0):
+                        contador = 0
+
+                    if(contador == fps and int(self.tc2.GetValue()) == 0):
+                        contador=0
 
                     if contador < frame_rate:
                         cv2.imwrite(self.__imagePath + "/frame%d.jpg" % self.count, image)  # save frame as JPEG file
